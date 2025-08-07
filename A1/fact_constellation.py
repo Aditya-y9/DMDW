@@ -4,25 +4,25 @@ import os
 import random
 import datetime
 
-# Database file path
+
 db_path = 'c:\\OneDrive - it.vjti.ac.in\\InITtoWinIT\\Acads\\DMDW\\A1\\fact_constellation.db'
 
-# CSV files directory
+
 csv_dir = 'c:\\OneDrive - it.vjti.ac.in\\InITtoWinIT\\Acads\\DMDW\\A1\\Dataset\\'
 
-# Delete existing database if it exists
+
 if os.path.exists(db_path):
     os.remove(db_path)
     print(f"Removed existing database: {db_path}")
 
-# Connect to the SQLite database
+
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 print("Creating fact constellation schema tables...")
 
-# ---------------------- SHARED DIMENSION TABLES ----------------------
-# Create dimension tables (shared between multiple fact tables)
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dim_products (
     product_id TEXT PRIMARY KEY,
@@ -90,8 +90,8 @@ CREATE TABLE IF NOT EXISTS dim_campaigns (
     campaign_budget REAL
 )''')
 
-# ---------------------- MULTIPLE FACT TABLES ----------------------
-# 1. Sales Fact Table (Transaction level)
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS fact_sales (
     sales_id TEXT PRIMARY KEY,
@@ -113,7 +113,7 @@ CREATE TABLE IF NOT EXISTS fact_sales (
     FOREIGN KEY (campaign_id) REFERENCES dim_campaigns(campaign_id)
 )''')
 
-# 2. Campaign Performance Fact Table
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS fact_campaign_performance (
     campaign_perf_id INTEGER PRIMARY KEY,
@@ -132,7 +132,7 @@ CREATE TABLE IF NOT EXISTS fact_campaign_performance (
     FOREIGN KEY (product_id) REFERENCES dim_products(product_id)
 )''')
 
-# 3. Inventory Fact Table
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS fact_inventory (
     inventory_id INTEGER PRIMARY KEY,
@@ -150,7 +150,7 @@ CREATE TABLE IF NOT EXISTS fact_inventory (
     FOREIGN KEY (date_id) REFERENCES dim_dates(date_id)
 )''')
 
-# 4. Customer Activity Fact Table
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS fact_customer_activity (
     activity_id INTEGER PRIMARY KEY,
@@ -168,7 +168,7 @@ CREATE TABLE IF NOT EXISTS fact_customer_activity (
     FOREIGN KEY (date_id) REFERENCES dim_dates(date_id)
 )''')
 
-# Function to import data from CSV
+
 def import_csv_to_table(file_name, table_name, column_mapping=None):
     csv_path = os.path.join(csv_dir, file_name)
     if not os.path.exists(csv_path):
@@ -181,7 +181,7 @@ def import_csv_to_table(file_name, table_name, column_mapping=None):
         reader = csv.reader(f)
         headers = next(reader)
         
-        # If column_mapping not provided, try to match headers with table columns
+        
         if not column_mapping:
             cursor.execute(f"PRAGMA table_info({table_name})")
             table_columns = [column[1] for column in cursor.fetchall()]
@@ -197,18 +197,18 @@ def import_csv_to_table(file_name, table_name, column_mapping=None):
                     sk_index = headers.index(header_lower + '_sk')
                     column_mapping[sk_index] = header_lower + '_id'
         
-        # Build SQL query based on column mapping
+        
         columns = list(column_mapping.values())
         placeholders = ', '.join(['?' for _ in columns])
         sql = f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES ({placeholders})"
         
-        # Process and insert rows
+        
         for row in reader:
             values = [row[i] for i in column_mapping.keys()]
             
-            # Convert types
+            
             for i, col in enumerate(columns):
-                # Only convert to int/float if NOT an ID field and contains a numeric value
+                
                 if not col.endswith('_id') and values[i]:
                     if col in ['quantity', 'impressions', 'clicks', 'beginning_inventory', 
                              'inventory_received', 'inventory_sold', 'inventory_on_hand', 
@@ -233,8 +233,8 @@ def import_csv_to_table(file_name, table_name, column_mapping=None):
                 print(f"SQL: {sql}")
                 print(f"Values: {values}")
 
-# ---------------------- POPULATE DIMENSION TABLES ----------------------
-# Import Products
+
+
 import_csv_to_table('dim_products.csv', 'dim_products', {
     0: 'product_id',
     1: 'product_code',
@@ -244,7 +244,7 @@ import_csv_to_table('dim_products.csv', 'dim_products', {
     5: 'location'
 })
 
-# Import Stores
+
 import_csv_to_table('dim_stores.csv', 'dim_stores', {
     0: 'store_id',
     1: 'store_code',
@@ -254,7 +254,7 @@ import_csv_to_table('dim_stores.csv', 'dim_stores', {
     5: 'store_manager_sk'
 })
 
-# Import Customers
+
 import_csv_to_table('dim_customers.csv', 'dim_customers', {
     0: 'customer_id',
     1: 'customer_code',
@@ -265,12 +265,12 @@ import_csv_to_table('dim_customers.csv', 'dim_customers', {
     6: 'customer_segment'
 })
 
-# Import Salespersons
+
 salespersons_csv_path = os.path.join(csv_dir, 'dim_salespersons.csv')
 if os.path.exists(salespersons_csv_path):
     import_csv_to_table('dim_salespersons.csv', 'dim_salespersons')
 
-# Import Dates
+
 dates_csv_path = os.path.join(csv_dir, 'dim_dates.csv')
 if os.path.exists(dates_csv_path):
     with open(dates_csv_path, 'r', encoding='utf-8') as f:
@@ -286,10 +286,10 @@ if os.path.exists(dates_csv_path):
             weekday = int(row[5])
             quarter = int(row[6])
             
-            # Determine if weekend
+            
             is_weekend = 1 if weekday in [6, 7] else 0
             
-            # Determine if holiday (simplified example)
+            
             is_holiday = 1 if (month == 1 and day == 1) or (month == 12 and day == 25) else 0
             
             cursor.execute("""
@@ -298,12 +298,12 @@ if os.path.exists(dates_csv_path):
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (date_id, full_date, day, month, year, weekday, quarter, is_holiday, is_weekend))
 
-# Import Campaigns
+
 campaigns_csv_path = os.path.join(csv_dir, 'dim_campaigns.csv')
 if os.path.exists(campaigns_csv_path):
     import_csv_to_table('dim_campaigns.csv', 'dim_campaigns')
 else:
-    # Generate sample campaign data if no CSV
+    
     campaign_types = ["Promotional", "Seasonal", "Holiday", "Product Launch", "Clearance"]
     campaign_channels = ["Email", "Social Media", "TV", "Radio", "Print", "In-Store"]
     
@@ -313,7 +313,7 @@ else:
         campaign_type = campaign_types[i % len(campaign_types)]
         campaign_channel = campaign_channels[i % len(campaign_channels)]
         
-        # Generate dates
+        
         year = 2024
         start_month = ((i-1) % 12) + 1
         end_month = min(start_month + 2, 12)
@@ -331,8 +331,8 @@ else:
         """, (i, campaign_code, campaign_name, start_date, end_date, 
              campaign_type, campaign_channel, budget))
 
-# ---------------------- POPULATE FACT TABLES ----------------------
-# 1. Import Sales Fact
+
+
 print("Loading fact_sales data...")
 sales_csv_path = os.path.join(csv_dir, 'fact_sales_normalized.csv')
 if os.path.exists(sales_csv_path):
@@ -340,7 +340,7 @@ if os.path.exists(sales_csv_path):
         reader = csv.reader(f)
         headers = next(reader)
         
-        # Create a more robust header mapping
+        
         header_map = {}
         for i, header in enumerate(headers):
             header_lower = header.lower()
@@ -348,17 +348,17 @@ if os.path.exists(sales_csv_path):
         
         print(f"CSV headers: {headers}")
         
-        # Process each row with safer extraction of values
+        
         for row in reader:
             try:
-                # Extract values - keep IDs as strings
+                
                 sales_id = row[header_map['sales_sk']] if 'sales_sk' in header_map and header_map['sales_sk'] < len(row) else None
                 product_id = row[header_map['product_sk']] if 'product_sk' in header_map and header_map['product_sk'] < len(row) else None
                 store_id = row[header_map['store_sk']] if 'store_sk' in header_map and header_map['store_sk'] < len(row) else None
                 customer_id = row[header_map['customer_sk']] if 'customer_sk' in header_map and header_map['customer_sk'] < len(row) else None
                 salesperson_id = row[header_map['salesperson_sk']] if 'salesperson_sk' in header_map and header_map['salesperson_sk'] < len(row) else None
                 
-                # Handle date carefully - it could be a date_sk or sales_date field
+                
                 date_id = None
                 if 'date_sk' in header_map and header_map['date_sk'] < len(row) and row[header_map['date_sk']]:
                     try:
@@ -366,7 +366,7 @@ if os.path.exists(sales_csv_path):
                     except ValueError:
                         print(f"Warning: Invalid date_id value: {row[header_map['date_sk']]}")
                 elif 'sales_date' in header_map and header_map['sales_date'] < len(row) and row[header_map['sales_date']]:
-                    # Extract date from timestamp if needed
+                    
                     date_str = row[header_map['sales_date']]
                     if 'T' in date_str:
                         date_str = date_str.split('T')[0]
@@ -377,8 +377,8 @@ if os.path.exists(sales_csv_path):
                 
                 campaign_id = row[header_map['campaign_sk']] if 'campaign_sk' in header_map and header_map['campaign_sk'] < len(row) and row[header_map['campaign_sk']] else None
                 
-                # Extract numeric fields carefully
-                quantity = 1  # Default value
+                
+                quantity = 1  
                 if 'quantity' in header_map and header_map['quantity'] < len(row) and row[header_map['quantity']]:
                     try:
                         quantity = int(row[header_map['quantity']])
@@ -406,7 +406,7 @@ if os.path.exists(sales_csv_path):
                     except ValueError:
                         print(f"Warning: Invalid total amount: {row[header_map['total_amount']]}, using default 0.0")
                 
-                # Skip if essential fields are missing
+                
                 if sales_id is None or product_id is None or store_id is None:
                     print(f"Warning: Skipping row with missing essential fields: {row}")
                     continue
@@ -426,9 +426,9 @@ if os.path.exists(sales_csv_path):
 
 print("Loaded fact_sales data")
 
-# ---------------------- GENERATE ADDITIONAL FACT TABLES ----------------------
 
-# 2. Generate Campaign Performance Facts (derived from sales and campaigns)
+
+
 print("Generating campaign performance facts...")
 cursor.execute("SELECT campaign_id FROM dim_campaigns")
 campaign_ids = [row[0] for row in cursor.fetchall()]
@@ -442,26 +442,26 @@ store_ids = [row[0] for row in cursor.fetchall()]
 cursor.execute("SELECT product_id FROM dim_products")
 product_ids = [row[0] for row in cursor.fetchall()]
 
-# Generate campaign performance data
+
 campaign_perf_id = 1
 for campaign_id in campaign_ids:
-    # For each campaign, generate data for multiple dates, stores, products
-    for date_index in range(0, len(date_ids), max(1, len(date_ids) // 10)):  # Sample dates
+    
+    for date_index in range(0, len(date_ids), max(1, len(date_ids) // 10)):  
         date_id = date_ids[date_index]
         
-        for store_index in range(0, len(store_ids), max(1, len(store_ids) // 5)):  # Sample stores
+        for store_index in range(0, len(store_ids), max(1, len(store_ids) // 5)):  
             store_id = store_ids[store_index]
             
-            for product_index in range(0, len(product_ids), max(1, len(product_ids) // 5)):  # Sample products
+            for product_index in range(0, len(product_ids), max(1, len(product_ids) // 5)):  
                 product_id = product_ids[product_index]
                 
-                # Generate random metrics
+                
                 impressions = int(random.uniform(500, 10000))
                 clicks = int(impressions * random.uniform(0.01, 0.2))
                 conversion_rate = random.uniform(0.001, 0.1)
                 cost_per_acquisition = random.uniform(5, 100)
                 
-                # Get revenue from sales if possible
+                
                 cursor.execute("""
                     SELECT SUM(total_amount) FROM fact_sales 
                     WHERE campaign_id = ? AND date_id = ? AND store_id = ? AND product_id = ?
@@ -482,17 +482,17 @@ for campaign_id in campaign_ids:
 
 print(f"Generated {campaign_perf_id-1} campaign performance facts")
 
-# 3. Generate Inventory Facts
+
 print("Generating inventory facts...")
 inventory_id = 1
 
-# Get unique product-store combinations from sales
+
 cursor.execute("SELECT DISTINCT product_id, store_id FROM fact_sales")
 product_store_pairs = cursor.fetchall()
 
-# Generate inventory data for each product-store pair across time
+
 for product_id, store_id in product_store_pairs:
-    # Get all dates for which we have sales for this product-store
+    
     cursor.execute("""
         SELECT DISTINCT date_id 
         FROM fact_sales 
@@ -500,16 +500,16 @@ for product_id, store_id in product_store_pairs:
         ORDER BY date_id
     """, (product_id, store_id))
     
-    # Get all dates for consistent inventory tracking
+    
     sale_dates = [row[0] for row in cursor.fetchall()]
     
-    # Initialize inventory tracking
+    
     beginning_inventory = int(random.uniform(50, 500))
     inventory_on_hand = beginning_inventory
     
-    # For each date, generate inventory movement
+    
     for date_id in date_ids:
-        # If we have sales for this date, use that quantity sold
+        
         cursor.execute("""
             SELECT SUM(quantity) FROM fact_sales 
             WHERE product_id = ? AND store_id = ? AND date_id = ?
@@ -518,13 +518,13 @@ for product_id, store_id in product_store_pairs:
         result = cursor.fetchone()
         inventory_sold = result[0] if result and result[0] else 0
         
-        # Generate random inventory received
+        
         inventory_received = int(random.uniform(0, inventory_sold * 1.5 + 10))
         
-        # Calculate ending inventory
+        
         inventory_on_hand = max(0, beginning_inventory + inventory_received - inventory_sold)
         
-        # Calculate inventory value ($) and days of supply
+        
         avg_unit_price = random.uniform(10, 100)
         inventory_value = inventory_on_hand * avg_unit_price
         days_of_supply = int(inventory_on_hand / max(1, inventory_sold) * 30) if inventory_sold > 0 else 90
@@ -539,26 +539,26 @@ for product_id, store_id in product_store_pairs:
         
         inventory_id += 1
         
-        # Next cycle's beginning inventory is this cycle's ending inventory
+        
         beginning_inventory = inventory_on_hand
         
-        # Stop after generating 20 days of data per product-store
+        
         if inventory_id % 20 == 0:
             break
 
 print(f"Generated {inventory_id-1} inventory facts")
 
-# 4. Generate Customer Activity Facts
+
 print("Generating customer activity facts...")
 activity_id = 1
 
-# Get unique customer-store combinations from sales
-cursor.execute("SELECT DISTINCT customer_id, store_id FROM fact_sales LIMIT 1000")  # Limit to avoid generating too much data
+
+cursor.execute("SELECT DISTINCT customer_id, store_id FROM fact_sales LIMIT 1000")  
 customer_store_pairs = cursor.fetchall()
 
-# Generate customer activity data for each customer-store pair
+
 for customer_id, store_id in customer_store_pairs:
-    # Get dates for which this customer made purchases
+    
     cursor.execute("""
         SELECT date_id, SUM(total_amount) 
         FROM fact_sales 
@@ -569,17 +569,17 @@ for customer_id, store_id in customer_store_pairs:
     
     customer_purchases = cursor.fetchall()
     
-    # Generate activity data for purchase dates and some non-purchase dates
+    
     for date_id, purchase_amount in customer_purchases:
-        # For purchase dates, we know they visited and bought something
+        
         visit_count = 1
         purchase_count = 1
         total_spend = purchase_amount
         
-        # Generate other metrics
+        
         browse_time_minutes = int(random.uniform(15, 120))
         items_viewed = int(random.uniform(3, 20))
-        cart_abandonment_count = 0  # They completed their purchase
+        cart_abandonment_count = 0  
         
         cursor.execute("""
             INSERT INTO fact_customer_activity
@@ -591,10 +591,10 @@ for customer_id, store_id in customer_store_pairs:
         
         activity_id += 1
         
-        # Also generate some non-purchase visits (browsing only)
-        if random.random() < 0.3:  # 30% chance of having additional non-purchase visit
-            # Find a date close to purchase date
-            visit_offset = random.randint(-10, -1)  # Visit before purchase
+        
+        if random.random() < 0.3:  
+            
+            visit_offset = random.randint(-10, -1)  
             
             cursor.execute("SELECT date_id FROM dim_dates WHERE date_id = ?", (date_id + visit_offset,))
             visit_date = cursor.fetchone()
@@ -608,7 +608,7 @@ for customer_id, store_id in customer_store_pairs:
                 
                 browse_time_minutes = int(random.uniform(5, 60))
                 items_viewed = int(random.uniform(1, 10))
-                cart_abandonment_count = int(random.random() < 0.4)  # 40% chance of cart abandonment
+                cart_abandonment_count = int(random.random() < 0.4)  
                 
                 cursor.execute("""
                     INSERT INTO fact_customer_activity
@@ -622,7 +622,7 @@ for customer_id, store_id in customer_store_pairs:
 
 print(f"Generated {activity_id-1} customer activity facts")
 
-# Commit the changes and close the connection
+
 conn.commit()
 conn.close()
 

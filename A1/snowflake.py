@@ -3,25 +3,25 @@ import csv
 import os
 import re
 
-# Database file path
+
 db_path = 'c:\\OneDrive - it.vjti.ac.in\\InITtoWinIT\\Acads\\DMDW\\A1\\snowflake.db'
 
-# CSV files directory
+
 csv_dir = 'c:\\OneDrive - it.vjti.ac.in\\InITtoWinIT\\Acads\\DMDW\\A1\\Dataset\\'
 
-# Delete existing database if it exists
+
 if os.path.exists(db_path):
     os.remove(db_path)
     print(f"Removed existing database: {db_path}")
 
-# Connect to the SQLite database
+
 conn = sqlite3.connect(db_path)
 cursor = conn.cursor()
 
 print("Creating snowflake schema tables...")
 
-# ---------------------- PRODUCT DIMENSION HIERARCHY ----------------------
-# Create normalized Product dimension tables
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dim_product_categories (
     category_id INTEGER PRIMARY KEY,
@@ -53,8 +53,8 @@ CREATE TABLE IF NOT EXISTS dim_products (
     FOREIGN KEY (location_id) REFERENCES dim_product_locations(location_id)
 )''')
 
-# ---------------------- STORE DIMENSION HIERARCHY ----------------------
-# Create normalized Store dimension tables
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dim_store_types (
     store_type_id INTEGER PRIMARY KEY,
@@ -79,8 +79,8 @@ CREATE TABLE IF NOT EXISTS dim_stores (
     FOREIGN KEY (city_id) REFERENCES dim_store_cities(city_id)
 )''')
 
-# ---------------------- CUSTOMER DIMENSION HIERARCHY ----------------------
-# Create normalized Customer dimension tables
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dim_customer_cities (
     city_id INTEGER PRIMARY KEY,
@@ -106,8 +106,8 @@ CREATE TABLE IF NOT EXISTS dim_customers (
     FOREIGN KEY (segment_id) REFERENCES dim_customer_segments(segment_id)
 )''')
 
-# ---------------------- SALESPERSON DIMENSION HIERARCHY ----------------------
-# Create normalized Salesperson dimension tables
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dim_salesperson_regions (
     region_id INTEGER PRIMARY KEY,
@@ -133,8 +133,8 @@ CREATE TABLE IF NOT EXISTS dim_salespersons (
     FOREIGN KEY (region_id) REFERENCES dim_salesperson_regions(region_id)
 )''')
 
-# ---------------------- DATE DIMENSION HIERARCHY ----------------------
-# Create normalized Date dimension tables
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dim_years (
     year_id INTEGER PRIMARY KEY,
@@ -170,8 +170,8 @@ CREATE TABLE IF NOT EXISTS dim_dates (
     FOREIGN KEY (month_id) REFERENCES dim_months(month_id)
 )''')
 
-# ---------------------- CAMPAIGN DIMENSION HIERARCHY ----------------------
-# Create normalized Campaign dimension tables
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS dim_campaign_types (
     campaign_type_id INTEGER PRIMARY KEY,
@@ -198,8 +198,8 @@ CREATE TABLE IF NOT EXISTS dim_campaigns (
     FOREIGN KEY (campaign_channel_id) REFERENCES dim_campaign_channels(campaign_channel_id)
 )''')
 
-# ---------------------- FACT TABLE ----------------------
-# Create fact table
+
+
 cursor.execute('''
 CREATE TABLE IF NOT EXISTS fact_sales (
     sales_id INTEGER PRIMARY KEY,
@@ -221,8 +221,8 @@ CREATE TABLE IF NOT EXISTS fact_sales (
     FOREIGN KEY (campaign_id) REFERENCES dim_campaigns(campaign_id)
 )''')
 
-# ---------------------- ETL FUNCTIONS ----------------------
-# Function to extract unique values from a CSV column
+
+
 def extract_unique_values(file_name, column_index, header=True):
     csv_path = os.path.join(csv_dir, file_name)
     unique_values = set()
@@ -230,41 +230,41 @@ def extract_unique_values(file_name, column_index, header=True):
     with open(csv_path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
         if header:
-            next(reader)  # Skip header row
+            next(reader)  
         for row in reader:
             if len(row) > column_index:
                 unique_values.add(row[column_index])
     
     return sorted(list(unique_values))
 
-# Function to load normalized data into dimension tables
+
 def load_normalized_dimension(source_file, source_column_index, dim_table, value_column, header=True):
     values = extract_unique_values(source_file, source_column_index, header)
     
-    # Insert values into dimension table
+    
     for i, value in enumerate(values, 1):
         cursor.execute(f"INSERT INTO {dim_table} (rowid, {value_column}) VALUES (?, ?)", (i, value))
     
-    # Create a mapping from value to ID
+    
     value_to_id = {value: i for i, value in enumerate(values, 1)}
     return value_to_id
 
-# ---------------------- PRODUCT DIMENSION ETL ----------------------
+
 print("Processing Product dimension...")
 
-# Load normalized product categories
+
 category_mapping = load_normalized_dimension('dim_products.csv', 3, 'dim_product_categories', 'category_name')
 print(f"Loaded {len(category_mapping)} product categories")
 
-# Load normalized product brands
+
 brand_mapping = load_normalized_dimension('dim_products.csv', 4, 'dim_product_brands', 'brand_name')
 print(f"Loaded {len(brand_mapping)} product brands")
 
-# Load normalized product locations
+
 location_mapping = load_normalized_dimension('dim_products.csv', 5, 'dim_product_locations', 'location_name')
 print(f"Loaded {len(location_mapping)} product locations")
 
-# Load products with foreign keys
+
 products_csv_path = os.path.join(csv_dir, 'dim_products.csv')
 with open(products_csv_path, 'r', encoding='utf-8') as f:
     reader = csv.reader(f)
@@ -290,18 +290,18 @@ with open(products_csv_path, 'r', encoding='utf-8') as f:
 
 print("Loaded products with normalized dimensions")
 
-# ---------------------- STORE DIMENSION ETL ----------------------
+
 print("Processing Store dimension...")
 
-# Load normalized store types
+
 store_type_mapping = load_normalized_dimension('dim_stores.csv', 3, 'dim_store_types', 'store_type_name')
 print(f"Loaded {len(store_type_mapping)} store types")
 
-# Load normalized store cities
+
 store_city_mapping = load_normalized_dimension('dim_stores.csv', 4, 'dim_store_cities', 'city_name')
 print(f"Loaded {len(store_city_mapping)} store cities")
 
-# Load stores with foreign keys
+
 stores_csv_path = os.path.join(csv_dir, 'dim_stores.csv')
 with open(stores_csv_path, 'r', encoding='utf-8') as f:
     reader = csv.reader(f)
@@ -326,18 +326,18 @@ with open(stores_csv_path, 'r', encoding='utf-8') as f:
 
 print("Loaded stores with normalized dimensions")
 
-# ---------------------- CUSTOMER DIMENSION ETL ----------------------
+
 print("Processing Customer dimension...")
 
-# Load normalized customer cities
+
 customer_city_mapping = load_normalized_dimension('dim_customers.csv', 5, 'dim_customer_cities', 'city_name')
 print(f"Loaded {len(customer_city_mapping)} customer cities")
 
-# Load normalized customer segments
+
 customer_segment_mapping = load_normalized_dimension('dim_customers.csv', 6, 'dim_customer_segments', 'segment_name')
 print(f"Loaded {len(customer_segment_mapping)} customer segments")
 
-# Load customers with foreign keys
+
 customers_csv_path = os.path.join(csv_dir, 'dim_customers.csv')
 with open(customers_csv_path, 'r', encoding='utf-8') as f:
     reader = csv.reader(f)
@@ -363,10 +363,10 @@ with open(customers_csv_path, 'r', encoding='utf-8') as f:
 
 print("Loaded customers with normalized dimensions")
 
-# ---------------------- DATE DIMENSION ETL ----------------------
+
 print("Processing Date dimension...")
 
-# Load normalized years
+
 dates_csv_path = os.path.join(csv_dir, 'dim_dates.csv')
 year_mapping = {}
 quarter_mapping = {}
@@ -376,7 +376,7 @@ with open(dates_csv_path, 'r', encoding='utf-8') as f:
     reader = csv.reader(f)
     headers = next(reader)
     
-    # First pass: collect all years, quarters, months
+    
     years = set()
     quarters_by_year = {}
     months_by_quarter = {}
@@ -396,17 +396,17 @@ with open(dates_csv_path, 'r', encoding='utf-8') as f:
         if quarter_month not in months_by_quarter:
             months_by_quarter[quarter_month] = True
 
-    # Reset file pointer to beginning
+    
     f.seek(0)
-    next(reader)  # Skip header again
+    next(reader)  
 
-    # Insert years
+    
     for i, year in enumerate(sorted(years), 1):
         cursor.execute("INSERT INTO dim_years (year_id, year_value) VALUES (?, ?)", 
                       (i, year))
         year_mapping[year] = i
     
-    # Insert quarters
+    
     quarter_id = 1
     for year, quarter in sorted(quarters_by_year.keys()):
         year_id = year_mapping[year]
@@ -415,7 +415,7 @@ with open(dates_csv_path, 'r', encoding='utf-8') as f:
         quarter_mapping[(year, quarter)] = quarter_id
         quarter_id += 1
     
-    # Insert months
+    
     month_names = {
         1: 'January', 2: 'February', 3: 'March', 4: 'April', 5: 'May', 6: 'June',
         7: 'July', 8: 'August', 9: 'September', 10: 'October', 11: 'November', 12: 'December'
@@ -434,11 +434,11 @@ with open(dates_csv_path, 'r', encoding='utf-8') as f:
         month_mapping[(year, quarter, month)] = month_id
         month_id += 1
     
-    # Reset file pointer to beginning again
-    f.seek(0)
-    next(reader)  # Skip header again
     
-    # Insert dates
+    f.seek(0)
+    next(reader)  
+    
+    
     for row in reader:
         date_id = int(row[1])
         full_date = row[0]
@@ -449,7 +449,7 @@ with open(dates_csv_path, 'r', encoding='utf-8') as f:
         quarter = int(row[6])
         
         month_id = month_mapping.get((year, quarter, month))
-        is_weekend = 1 if weekday in [6, 7] else 0  # Assume 6=Saturday, 7=Sunday
+        is_weekend = 1 if weekday in [6, 7] else 0  
         
         cursor.execute("""
             INSERT INTO dim_dates 
@@ -459,10 +459,10 @@ with open(dates_csv_path, 'r', encoding='utf-8') as f:
 
 print("Loaded dates with normalized dimensions")
 
-# ---------------------- CAMPAIGN DIMENSION ETL ----------------------
+
 print("Processing Campaign dimension...")
 
-# For simplicity, we'll synthesize campaign types and channels
+
 campaign_types = [
     "Promotional", "Seasonal", "Holiday", "Product Launch", "Clearance",
     "Brand Awareness", "Customer Retention", "New Customer Acquisition"
@@ -473,21 +473,21 @@ campaign_channels = [
     "Direct Mail", "SMS", "Web", "Mobile App"
 ]
 
-# Insert campaign types
+
 for i, campaign_type in enumerate(campaign_types, 1):
     cursor.execute("INSERT INTO dim_campaign_types (campaign_type_id, campaign_type_name) VALUES (?, ?)",
                   (i, campaign_type))
 
-# Insert campaign channels
+
 for i, campaign_channel in enumerate(campaign_channels, 1):
     cursor.execute("INSERT INTO dim_campaign_channels (campaign_channel_id, campaign_channel_name) VALUES (?, ?)",
                   (i, campaign_channel))
 
-# Create mappings for campaign types and channels
+
 campaign_type_mapping = {name: i for i, name in enumerate(campaign_types, 1)}
 campaign_channel_mapping = {name: i for i, name in enumerate(campaign_channels, 1)}
 
-# Load campaigns with foreign keys (using a pattern to assign types and channels)
+
 campaigns_csv_path = os.path.join(csv_dir, 'dim_campaigns.csv')
 if os.path.exists(campaigns_csv_path):
     with open(campaigns_csv_path, 'r', encoding='utf-8') as f:
@@ -495,20 +495,20 @@ if os.path.exists(campaigns_csv_path):
         headers = next(reader)
         
         for row in reader:
-            # Use modulo to assign types and channels for demonstration
+            
             campaign_id = int(row[0])
             campaign_code = row[1] if len(row) > 1 else f"CAM_{campaign_id:05}"
             campaign_name = row[2] if len(row) > 2 else f"Campaign {campaign_id}"
             
-            # For start and end dates, use default values if not provided
+            
             campaign_start_date = row[3] if len(row) > 3 and row[3] else "2024-01-01"
             campaign_end_date = row[4] if len(row) > 4 and row[4] else "2024-12-31"
             
-            # Assign campaign type and channel based on id
+            
             campaign_type_id = (campaign_id % len(campaign_types)) + 1
             campaign_channel_id = (campaign_id % len(campaign_channels)) + 1
             
-            # Budget (use value if provided, otherwise generate)
+            
             campaign_budget = float(row[5]) if len(row) > 5 and row[5] else campaign_id * 1000.0
             
             cursor.execute("""
@@ -521,10 +521,10 @@ if os.path.exists(campaigns_csv_path):
 
 print("Loaded campaigns with normalized dimensions")
 
-# ---------------------- SALESPERSON DIMENSION ETL ----------------------
+
 print("Processing Salesperson dimension...")
 
-# Load normalized salesperson regions and designations if data is available
+
 salesperson_regions = [
     "North", "South", "East", "West", "Central", "Northeast", "Southeast", 
     "Northwest", "Southwest", "International"
@@ -535,21 +535,21 @@ salesperson_designations = [
     "Sales Manager", "Regional Sales Manager", "Sales Director", "VP of Sales"
 ]
 
-# Insert salesperson regions
+
 for i, region in enumerate(salesperson_regions, 1):
     cursor.execute("INSERT INTO dim_salesperson_regions (region_id, region_name) VALUES (?, ?)",
                   (i, region))
 
-# Insert salesperson designations
+
 for i, designation in enumerate(salesperson_designations, 1):
     cursor.execute("INSERT INTO dim_salesperson_designations (designation_id, designation_name) VALUES (?, ?)",
                   (i, designation))
 
-# Create mappings
+
 region_mapping = {name: i for i, name in enumerate(salesperson_regions, 1)}
 designation_mapping = {name: i for i, name in enumerate(salesperson_designations, 1)}
 
-# Load salespersons with foreign keys
+
 salespersons_csv_path = os.path.join(csv_dir, 'dim_salespersons.csv')
 if os.path.exists(salespersons_csv_path):
     with open(salespersons_csv_path, 'r', encoding='utf-8') as f:
@@ -557,16 +557,16 @@ if os.path.exists(salespersons_csv_path):
         headers = next(reader)
         
         for row in reader:
-            # Extract available fields
+            
             salesperson_id = int(row[0])
             salesperson_code = row[1] if len(row) > 1 else f"SP_{salesperson_id:05}"
             salesperson_name = row[2] if len(row) > 2 else f"Salesperson {salesperson_id}"
             
-            # Email and phone fields if available
+            
             salesperson_email = row[3] if len(row) > 3 else f"salesperson{salesperson_id}@example.com"
             salesperson_phone = row[4] if len(row) > 4 else f"555-{salesperson_id:04}"
             
-            # Assign region and designation based on id
+            
             designation_id = (salesperson_id % len(salesperson_designations)) + 1
             region_id = (salesperson_id % len(salesperson_regions)) + 1
             
@@ -580,22 +580,22 @@ if os.path.exists(salespersons_csv_path):
 
 print("Loaded salespersons with normalized dimensions")
 
-# ---------------------- FACT TABLE ETL ----------------------
+
 print("Processing Fact Sales...")
 
-# Load fact_sales
+
 fact_sales_csv_path = os.path.join(csv_dir, 'fact_sales_normalized.csv')
 if os.path.exists(fact_sales_csv_path):
     with open(fact_sales_csv_path, 'r', encoding='utf-8') as f:
         reader = csv.reader(f)
         headers = next(reader)
         
-        # Create a better header mapping - case insensitive and checking for variations
+        
         header_map = {}
         for i, header in enumerate(headers):
             header_lower = header.lower()
             header_map[header_lower] = i
-            # Add common variations
+            
             if header_lower == 'sales_sk':
                 header_map['sales_id'] = i
             elif header_lower == 'product_sk':
@@ -613,22 +613,22 @@ if os.path.exists(fact_sales_csv_path):
         
         print(f"Detected columns: {headers}")
         
-        # Process each row with safer access to columns
+        
         for row in reader:
             try:
-                # Extract ID fields safely
+                
                 sales_id = int(row[header_map['sales_sk']]) if 'sales_sk' in header_map and header_map['sales_sk'] < len(row) else None
                 product_id = int(row[header_map['product_sk']]) if 'product_sk' in header_map and header_map['product_sk'] < len(row) else None
                 store_id = int(row[header_map['store_sk']]) if 'store_sk' in header_map and header_map['store_sk'] < len(row) else None
                 customer_id = int(row[header_map['customer_sk']]) if 'customer_sk' in header_map and header_map['customer_sk'] < len(row) else None
                 salesperson_id = int(row[header_map['salesperson_sk']]) if 'salesperson_sk' in header_map and header_map['salesperson_sk'] < len(row) else None
                 
-                # Handle date_id safely
+                
                 date_id = None
                 if 'date_sk' in header_map and header_map['date_sk'] < len(row) and row[header_map['date_sk']]:
                     date_id = int(row[header_map['date_sk']])
                 elif 'sales_date' in header_map and header_map['sales_date'] < len(row) and row[header_map['sales_date']]:
-                    # Extract date from timestamp if needed
+                    
                     date_str = row[header_map['sales_date']]
                     if 'T' in date_str:
                         date_str = date_str.split('T')[0]
@@ -639,19 +639,19 @@ if os.path.exists(fact_sales_csv_path):
                 
                 campaign_id = int(row[header_map['campaign_sk']]) if 'campaign_sk' in header_map and header_map['campaign_sk'] < len(row) and row[header_map['campaign_sk']] else None
                 
-                # Extract numeric values safely
+                
                 quantity = None
                 if 'quantity' in header_map and header_map['quantity'] < len(row) and row[header_map['quantity']]:
                     try:
                         quantity = int(row[header_map['quantity']])
                     except ValueError:
-                        # If we can't convert to int, use default
+                        
                         print(f"Warning: Invalid quantity value: {row[header_map['quantity']]}, using default")
                         quantity = 1
                 else:
-                    quantity = 1  # Default quantity
+                    quantity = 1  
                 
-                # Handle other numeric fields similarly
+                
                 unit_price = 0.0
                 if 'unit_price' in header_map and header_map['unit_price'] < len(row) and row[header_map['unit_price']]:
                     try:
@@ -673,7 +673,7 @@ if os.path.exists(fact_sales_csv_path):
                     except ValueError:
                         print(f"Warning: Invalid total amount value: {row[header_map['total_amount']]}, using default")
                 
-                # Skip if we're missing key IDs
+                
                 if sales_id is None or product_id is None or store_id is None:
                     print(f"Warning: Skipping row with missing required IDs: {row}")
                     continue
@@ -687,7 +687,7 @@ if os.path.exists(fact_sales_csv_path):
                      quantity, unit_price, discount_pct, total_amount))
             
             except Exception as e:
-                # Print detailed error info but continue processing
+                
                 print(f"Error processing row: {e}")
                 print(f"Row data: {row}")
                 print(f"Header map: {header_map}")
@@ -695,7 +695,7 @@ if os.path.exists(fact_sales_csv_path):
 
 print("Loaded fact_sales data")
 
-# Commit the changes and close the connection
+
 conn.commit()
 conn.close()
 

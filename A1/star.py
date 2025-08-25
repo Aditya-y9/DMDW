@@ -3,10 +3,10 @@ import csv
 import os
 
 
-db_path = 'c:\\OneDrive - it.vjti.ac.in\\InITtoWinIT\\Acads\\DMDW\\A1\\star.db'
+db_path = 'A1\\star.db'
 
 
-csv_dir = 'c:\\OneDrive - it.vjti.ac.in\\InITtoWinIT\\Acads\\DMDW\\A1\\Dataset\\'
+csv_dir = 'A1\\Dataset\\'
 
 
 if os.path.exists(db_path):
